@@ -160,11 +160,11 @@ router.put("/:productId", productValidation, async (req, res, next) => {
   }
 });
 
-router.get("/:id/reviews", async (req, res, next) => {
+router.get("/:productId/reviews", async (req, res, next) => {
   try {
     const products = await getProducts();
     const productFound = products.find(
-      product => product._id === req.params.id
+      product => product._id === req.params.productId
     );
     if (productFound) {
       res.send(productFound.reviews);
@@ -179,11 +179,11 @@ router.get("/:id/reviews", async (req, res, next) => {
   }
 });
 
-router.get("/:id/reviews/:reviewId", async (req, res, next) => {
+router.get("/:productId/reviews/:reviewId", async (req, res, next) => {
   try {
     const products = await getProducts();
     const productFound = products.find(
-      product => product._id === req.params.id
+      product => product._id === req.params.productId
     );
     if (productFound) {
       const reviewFound = productFound.reviews.find(
@@ -207,12 +207,12 @@ router.get("/:id/reviews/:reviewId", async (req, res, next) => {
   }
 });
 
-router.post("/:id/reviews/", reviewValidation, async (req, res, next) => {
+router.post("/:productId/reviews/", reviewValidation, async (req, res, next) => {
   try {
     const products = await getProducts();
 
     const productIndex = products.findIndex(
-      product => product._id === req.params.id
+      product => product._id === req.params.productId
     );
     if (productIndex !== -1) {
       // product found
@@ -236,14 +236,14 @@ router.post("/:id/reviews/", reviewValidation, async (req, res, next) => {
 });
 
 router.put(
-  "/:id/reviews/:reviewId",
+  "/:productId/reviews/:reviewId",
   reviewValidation,
   async (req, res, next) => {
     try {
       const products = await getProducts();
 
       const productIndex = products.findIndex(
-        product => product._id === req.params.id
+        product => product._id === req.params.productId
       );
 
       if (productIndex !== -1) {
@@ -276,11 +276,11 @@ router.put(
   }
 );
 
-router.delete("/:id/reviews/:reviewId", async (req, res, next) => {
+router.delete("/:productId/reviews/:reviewId", async (req, res, next) => {
   try {
     const products = await getProducts();
     const productIndex = products.findIndex(
-      product => product._id === req.params.id
+      product => product._id === req.params.productId
     );
     if (productIndex !== -1) {
       products[productIndex].reviews = products[productIndex].reviews.filter(
@@ -296,11 +296,11 @@ router.delete("/:id/reviews/:reviewId", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:productId", async (req, res, next) => {
   try {
     const products = await getProducts();
     const filteredProducts = products.filter(
-      product => product._id != req.params.id
+      product => product._id != req.params.productId
     );
     await writeProducts(filteredProducts);
     res.send("Product has been deleted");
@@ -310,19 +310,19 @@ router.delete("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/:id/upload", upload.single("image"), async (req, res, next) => {
+router.post("/:productId/upload", upload.single("image"), async (req, res, next) => {
   const [name, extention] = req.file.mimetype.split("/");
   try {
     await writeFile(
       path.join(
         __dirname,
-        `../../../public/img/products/${req.params.id}.${extention}`
+        `../../../public/img/products/${req.params.productId}.${extention}`
       ),
       req.file.buffer
     );
     const products = await getProducts();
     const updatedDb = products.map(product =>
-      product._id === req.params.id
+      product._id === req.params.productId
         ? {
             ...product,
             updatedAt: new Date(),
@@ -372,10 +372,27 @@ router.get("/export/exportToCSV", async (req, res, next) => {
   }
 });
 
-router.get("/sumTwoPrices", async (req, res, next) => {
+router.get("/sumTwoPrices/", async (req, res, next) => {
   try {
-    const { twoProds } = req.query;
+    const { prod1, prod2 } = req.query;
 
+    // const products =  await getProducts()      
+    // if (req.query && req.query._id) {
+    //     const filteredProducts = books.filter(
+    //       book =>
+    //         book.hasOwnProperty("price") &&
+    //         product._is === req.query._id
+    //     );
+    //     res.send(filteredProducts);
+    //   } else {
+    //       console.log("Not able to sum up");
+    //   }
+    // const products =  await getProducts()
+    //     const prod1 = products.filter(
+    //         product => product._id === req.query.id1)
+    //      const selectedProduct2 = products.filter(
+    //         product => product._id === req.query.id2)
+    //     selectedProduct1.price, selectedProduct2.price
     const xmlBody = 
     
 //     `<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -396,10 +413,10 @@ begin()
         xmlns: "http://tempuri.org/",
       })
       .ele("intA")
-      .text(parseInt(`${twoProds[0].price}`))
+      .text(parseInt(`${prod1[0].price}`))
       .up() // because it is a sibling & not a nested item
       .ele("intB")
-      .text(parseInt(`${twoProds[1].price}`))
+      .text(parseInt(`${prod2[0].price}`))
       .end()
 
     const response = await axios({ // create a http request {POST on on the url, and you need HEADERS!! & provide the xml body by respecting the documentation and their specs (we did this above) }
@@ -407,14 +424,12 @@ begin()
       url:
         "http://www.dneonline.com/calculator.asmx?op=Add",
       data: xmlBody,
-      headers: { "Content-type": "text/xml" },
+      headers: { "Content-Type": "application/soap+xml" },
     });
     const xml = response.data;
     const parsedJS = await asyncParser(xml);
     res.send(
-      parsedJS["soap12:Envelope"]["soap12:Body"][0][
-        "m:AllLowercaseWithTokenResponse"
-      ][0]["m:AllLowercaseWithTokenResult"][0]
+      parsedJS
     );
   } catch (error) {
     next(error);

@@ -31,6 +31,7 @@ server.use("/carts", cartsRoutes)
 // server.use("/problems", problematicRoutes)
 
 // ERROR HANDLERS
+console.log(listEndpoints(server))
 
 server.use(notFoundHandler);
 server.use(unauthorizedHandler);

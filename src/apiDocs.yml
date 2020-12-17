@@ -1,0 +1,299 @@
+openapi: 3.0.3
+info:
+  version: 1.0.0
+  title: Strive Store
+  description: Practicing making APIs and documentation
+servers:
+  - url: http://localhost:3002
+    description: Local server
+  - url: https://hosted.on.herokuapp.com
+    description: Cloud server
+tags:
+  - name: products
+    description: Endpoints related to products
+  - name: carts
+    description: Endpoints related to what's in the shopping cart
+paths:
+  /products:
+    get:
+      tags:
+        - products
+      summary: Returns a list of products
+      description: Extended description of GET /products route
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: Filter books by category
+        - in: query
+          name: title
+          schema:
+            type: string
+          description: Filter books by title
+      responses:
+        "200":
+          description: A list of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Book"
+        "404":
+          description: A not found error
+    post:
+      tags:
+        - products
+      summary: Adds new products
+      description: Extendend description of POST /products route
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Book"
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  asin:
+                    type: string
+        "400":
+          description: Bad Request
+          content:
+            text/html:
+              schema:
+                type: string
+                example: "Required fields missing"
+        "500":
+          description: Generic Server Error
+          content:
+            text/html:
+              schema:
+                type: string
+                example: "Generic Server Error"
+  /products/{productId}:
+    get:
+      tags:
+        - products
+      summary: Returns a single product
+      description: Extendend description of GET /products/:productId route
+      parameters:
+        - in: path
+          name: productId
+          schema:
+            type: string
+          description: "One productId is required "
+          required: true
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+        "400":
+          description: Bad Request
+          content:
+            text/html:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+          content:
+            text/html:
+              schema:
+                type: string
+        "500":
+          description: Generic Server Error
+          content:
+            text/html:
+              schema:
+                type: string
+    put:
+      tags:
+        - products
+      summary: Edit details of a single product
+      description: Extendend description of PUT /products/:productId route
+      parameters:
+        - in: path
+          name: productId
+          schema:
+            type: string
+          description: "One productId is required "
+          required: true
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: ""
+        "400":
+          description: Bad Request
+          content:
+            text/html:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+          content:
+            text/html:
+              schema:
+                type: string
+        "500":
+          description: Generic Server Error
+          content:
+            text/html:
+              schema:
+                type: string
+    delete:
+      tags:
+        - products
+      summary: Delete a single product
+      description: Extendend description of DELETE /products/:productId route
+      parameters:
+        - in: path
+          name: productId
+          schema:
+            type: string
+          description: "One productId is required "
+          required: true
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: ""
+        "400":
+          description: Bad Request
+          content:
+            text/html:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+          content:
+            text/html:
+              schema:
+                type: string
+        "500":
+          description: Generic Server Error
+          content:
+            text/html:
+              schema:
+                type: string
+  /products/{productId}/reviews:
+    get:
+      tags:
+        - products
+      summary: all reviews for a single product
+      description: Extendend description of GET /products/:productId/reviews route
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+          description: "one product id is required to see reviews"
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: ""
+        "400":
+          description: Bad Request
+          content:
+            text/html:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+          content:
+            text/html:
+              schema:
+                type: string
+        "500":
+          description: Generic Server Error
+          content:
+            text/html:
+              schema:
+                type: string
+  /products/{productId}/reviews/{reviewId}:
+    get:
+      tags:
+        - products
+      summary: get one specific review for a single product
+      description: Extendend description of GET /products/:productId/reviews/:reviewId route
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+          description: "you will need the product id to see the specific review about this one product"
+        - in: path
+          name: reviewId
+          required: true
+          schema:
+            type: string
+          description: "you will need the review id to see the specific product about this one product"
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: ""
+        "400":
+          description: Bad Request
+          content:
+            text/html:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+          content:
+            text/html:
+              schema:
+                type: string
+        "500":
+          description: Generic Server Error
+          content:
+            text/html:
+              schema:
+                type: string
+
+components:
+  schemas:
+    Book:
+      type: object
+      properties:
+        asin:
+          type: string
+        title:
+          type: string
+        price:
+          type: number
+        category:
+          type: string
+        img:
+          type: string
+      required:
+        - asin
+        - title
+        - price
+    User:
+      type: object
+      properties:
+        name:
+          type: string
+        img:
+          type: string
