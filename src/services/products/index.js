@@ -11,7 +11,11 @@ const {
   writeProducts,
 } = require("../../lib/utilities");
 
-const { writeFile } = require("fs-extra");
+const { writeFile, createReadStream } = require("fs-extra");
+const {pipeline} = require("stream")
+const { Transform } = require("json2csv")
+
+const productPath = path.join(__dirname, "products.json")
 
 const { check, validationResult } = require("express-validator");
 const productValidation = [
@@ -26,6 +30,39 @@ const reviewValidation = [
   check("rate").exists().withMessage("Rate is required"),
   check("comment").exists().withMessage("comment is required"),
 ];
+
+
+router.get("/exportToCSV", async (req, res, next) => {
+try {
+let readableStream = createReadStream(productPath)
+let json2csv = new Transform({fields: [
+  "_id",
+  "name",
+  "description",
+  "brand",
+  "price",
+  "category",
+  "createdAt",
+  "updatedAt",
+  "imageUrl"
+]})
+res.setHeader("Content-Disposition", "attachment; filename=productsList.csv")
+pipeline(readableStream, json2csv, res, err=>{
+  if (err) {
+    console.log(err);
+    next(err)
+  } else {
+console.log("Done");
+
+
+  }
+} )
+} catch (error) {
+  console.log(error);
+  
+}
+
+})
 
 router.get("/:productId", async (req, res, next) => {
   try {
@@ -65,11 +102,14 @@ router.get("/", async (req, res, next) => {
   }
 });
 
+
+
 router.post("/", productValidation, async (req, res, next) => {
   try {
     const validationErrors = validationResult(req);
-
-    if (!validationErrors.isEmpty()) {
+    const products = await getProducts();
+const productFound = products.find(product => product._id = req.body._id)
+    if (!validationErrors.isEmpty() && productFound) {
       const err = new Error();
       err.httpStatusCode = 400;
       err.message = validationErrors;
@@ -113,6 +153,7 @@ router.delete("/:productId", async (req, res, next) => {
 
 router.put("/:productId", productValidation, async (req, res, next) => {
   try {
+
     const validationErrors = validationResult(req);
 
     if (!validationErrors.isEmpty()) {
@@ -126,7 +167,7 @@ router.put("/:productId", productValidation, async (req, res, next) => {
         product => product._id === req.params.productId
       );
 
-      if (productsIndex != -1) {
+      if (productsIndex !== -1) {
         const updatedProducts = [
           ...products.slice(0, productsIndex),
           { ...products[productsIndex], ...req.body },
@@ -285,8 +326,8 @@ router.delete("/:id/reviews/:reviewId", async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const products = await getProducts();
-    const updatedDb = products.filter(product => product._id != req.params.id);
-    await writeProducts(updatedDb);
+    const filteredProducts = products.filter(product => product._id != req.params.id);
+    await writeProducts(filteredProducts);
     res.send("Product has been deleted");
   } catch (error) {
     console.log(error);
@@ -323,5 +364,8 @@ router
       next(error);
     }
   });
+
+
+
 
 module.exports = router;
