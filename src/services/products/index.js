@@ -12,10 +12,19 @@ const {
 } = require("../../lib/utilities");
 
 const { writeFile, createReadStream } = require("fs-extra");
-const {pipeline} = require("stream")
-const { Transform } = require("json2csv")
+const { pipeline } = require("stream");
+const { Transform } = require("json2csv");
 
-const productPath = path.join(__dirname, "products.json")
+const { parseString } = require("xml2js");
+const publicIp = require("public-ip");
+const axios = require("axios"); //library to create http request (similar to browser's fetch). Can be used in FE & BE
+const { promisify } = require("util");
+const { begin } = require("xmlbuilder"); //plug in to build xtml document
+
+const xmlRoutes = express.Router();
+const asyncParser = promisify(parseString);
+
+const productPath = path.join(__dirname, "products.json");
 
 const { check, validationResult } = require("express-validator");
 const productValidation = [
@@ -30,39 +39,6 @@ const reviewValidation = [
   check("rate").exists().withMessage("Rate is required"),
   check("comment").exists().withMessage("comment is required"),
 ];
-
-
-router.get("/exportToCSV", async (req, res, next) => {
-try {
-let readableStream = createReadStream(productPath)
-let json2csv = new Transform({fields: [
-  "_id",
-  "name",
-  "description",
-  "brand",
-  "price",
-  "category",
-  "createdAt",
-  "updatedAt",
-  "imageUrl"
-]})
-res.setHeader("Content-Disposition", "attachment; filename=productsList.csv")
-pipeline(readableStream, json2csv, res, err=>{
-  if (err) {
-    console.log(err);
-    next(err)
-  } else {
-console.log("Done");
-
-
-  }
-} )
-} catch (error) {
-  console.log(error);
-  
-}
-
-})
 
 router.get("/:productId", async (req, res, next) => {
   try {
@@ -102,13 +78,11 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-
-
 router.post("/", productValidation, async (req, res, next) => {
   try {
     const validationErrors = validationResult(req);
     const products = await getProducts();
-const productFound = products.find(product => product._id = req.body._id)
+    const productFound = products.find(product => (product._id = req.body._id));
     if (!validationErrors.isEmpty() && productFound) {
       const err = new Error();
       err.httpStatusCode = 400;
@@ -153,7 +127,6 @@ router.delete("/:productId", async (req, res, next) => {
 
 router.put("/:productId", productValidation, async (req, res, next) => {
   try {
-
     const validationErrors = validationResult(req);
 
     if (!validationErrors.isEmpty()) {
@@ -326,7 +299,9 @@ router.delete("/:id/reviews/:reviewId", async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const products = await getProducts();
-    const filteredProducts = products.filter(product => product._id != req.params.id);
+    const filteredProducts = products.filter(
+      product => product._id != req.params.id
+    );
     await writeProducts(filteredProducts);
     res.send("Product has been deleted");
   } catch (error) {
@@ -335,37 +310,115 @@ router.delete("/:id", async (req, res, next) => {
   }
 });
 
-router
-  .post("/:id/upload", upload.single("image"), async (req, res, next) => {
-    const [name, extention] = req.file.mimetype.split("/");
-    try {
-      await writeFile(
-        path.join(
-          __dirname,
-          `../../../public/img/products/${req.params.id}.${extention}`
-        ),
-        req.file.buffer
-      );
-      const products = await getProducts();
-      const updatedDb = products.map(product =>
-        product._id === req.params.id
-          ? {
-              ...product,
-              updatedAt: new Date(),
-              imageUrl: `http://localhost:${process.env.PORT}/products/${req.params.id}.${extention}`,
-            }
-          : product
-      );
-      await writeProducts(updatedDb);
-      // console.log(updatedDb)
-      res.status(201).send("ok");
-    } catch (error) {
-      console.log(error);
-      next(error);
-    }
-  });
+router.post("/:id/upload", upload.single("image"), async (req, res, next) => {
+  const [name, extention] = req.file.mimetype.split("/");
+  try {
+    await writeFile(
+      path.join(
+        __dirname,
+        `../../../public/img/products/${req.params.id}.${extention}`
+      ),
+      req.file.buffer
+    );
+    const products = await getProducts();
+    const updatedDb = products.map(product =>
+      product._id === req.params.id
+        ? {
+            ...product,
+            updatedAt: new Date(),
+            imageUrl: `http://localhost:${process.env.PORT}/products/${req.params.id}.${extention}`,
+          }
+        : product
+    );
+    await writeProducts(updatedDb);
+    // console.log(updatedDb)
+    res.status(201).send("ok");
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+});
 
+router.get("/export/exportToCSV", async (req, res, next) => {
+  try {
+    let readableStream = createReadStream(productPath);
+    let json2csv = new Transform({
+      fields: [
+        "_id",
+        "name",
+        "description",
+        "brand",
+        "price",
+        "category",
+        "createdAt",
+        "updatedAt",
+        "imageUrl",
+      ],
+    });
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=productsList.csv"
+    );
+    pipeline(readableStream, json2csv, res, err => {
+      if (err) {
+        console.log(err);
+        next(err);
+      } else {
+        console.log("Done");
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
 
+router.get("/sumTwoPrices", async (req, res, next) => {
+  try {
+    const { twoProds } = req.query;
 
+    const xmlBody = 
+    
+//     `<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+//   <soap12:Body>
+//     <Add xmlns="http://tempuri.org/">
+//       <intA>${twoProds[0].price}</intA>
+//       <intB>${twoProds[1].price}</intB>
+//     </Add>
+//   </soap12:Body>
+// </soap12:Envelope>`;
+
+begin()
+      .ele("soap12:Envelope", {
+        "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+      })
+      .ele("soap12:Body")
+      .ele("Add", {
+        xmlns: "http://tempuri.org/",
+      })
+      .ele("intA")
+      .text(parseInt(`${twoProds[0].price}`))
+      .up() // because it is a sibling & not a nested item
+      .ele("intB")
+      .text(parseInt(`${twoProds[1].price}`))
+      .end()
+
+    const response = await axios({ // create a http request {POST on on the url, and you need HEADERS!! & provide the xml body by respecting the documentation and their specs (we did this above) }
+      method: "post",
+      url:
+        "http://www.dneonline.com/calculator.asmx?op=Add",
+      data: xmlBody,
+      headers: { "Content-type": "text/xml" },
+    });
+    const xml = response.data;
+    const parsedJS = await asyncParser(xml);
+    res.send(
+      parsedJS["soap12:Envelope"]["soap12:Body"][0][
+        "m:AllLowercaseWithTokenResponse"
+      ][0]["m:AllLowercaseWithTokenResult"][0]
+    );
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router;

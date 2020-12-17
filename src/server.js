@@ -4,6 +4,7 @@ const cors = require("cors");
 const listEndpoints = require("express-list-endpoints");
 const productsRoutes = require("./services/products");
 const cartsRoutes = require("./services/carts");
+
 const path = require("path");
 const {
   notFoundHandler,
@@ -17,13 +18,13 @@ const port = process.env.PORT || 3001;
 
 
 
-//Middlewares
+//MIDDLEWARES
 
 server.use(cors());
 server.use(express.json());
 server.use(express.static(path.join(__dirname, '../public/img')))
 
-
+//ROUTES
 server.use("/products", productsRoutes);
 server.use("/carts", cartsRoutes)
 // server.use("/reviews", reviewsRoutes);
