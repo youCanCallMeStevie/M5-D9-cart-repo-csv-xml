@@ -207,33 +207,37 @@ router.get("/:productId/reviews/:reviewId", async (req, res, next) => {
   }
 });
 
-router.post("/:productId/reviews/", reviewValidation, async (req, res, next) => {
-  try {
-    const products = await getProducts();
+router.post(
+  "/:productId/reviews/",
+  reviewValidation,
+  async (req, res, next) => {
+    try {
+      const products = await getProducts();
 
-    const productIndex = products.findIndex(
-      product => product._id === req.params.productId
-    );
-    if (productIndex !== -1) {
-      // product found
-      products[productIndex].reviews.push({
-        ...req.body,
-        _id: uniqid(),
-        createdAt: new Date(),
-      });
-      await writeProducts(products);
-      res.status(201).send(products);
-    } else {
-      // product not found
-      const error = new Error();
-      error.httpStatusCode = 404;
+      const productIndex = products.findIndex(
+        product => product._id === req.params.productId
+      );
+      if (productIndex !== -1) {
+        // product found
+        products[productIndex].reviews.push({
+          ...req.body,
+          _id: uniqid(),
+          createdAt: new Date(),
+        });
+        await writeProducts(products);
+        res.status(201).send(products);
+      } else {
+        // product not found
+        const error = new Error();
+        error.httpStatusCode = 404;
+        next(error);
+      }
+    } catch (error) {
+      console.log(error);
       next(error);
     }
-  } catch (error) {
-    console.log(error);
-    next(error);
   }
-});
+);
 
 router.put(
   "/:productId/reviews/:reviewId",
@@ -310,34 +314,38 @@ router.delete("/:productId", async (req, res, next) => {
   }
 });
 
-router.post("/:productId/upload", upload.single("image"), async (req, res, next) => {
-  const [name, extention] = req.file.mimetype.split("/");
-  try {
-    await writeFile(
-      path.join(
-        __dirname,
-        `../../../public/img/products/${req.params.productId}.${extention}`
-      ),
-      req.file.buffer
-    );
-    const products = await getProducts();
-    const updatedDb = products.map(product =>
-      product._id === req.params.productId
-        ? {
-            ...product,
-            updatedAt: new Date(),
-            imageUrl: `http://localhost:${process.env.PORT}/products/${req.params.id}.${extention}`,
-          }
-        : product
-    );
-    await writeProducts(updatedDb);
-    // console.log(updatedDb)
-    res.status(201).send("ok");
-  } catch (error) {
-    console.log(error);
-    next(error);
+router.post(
+  "/:productId/upload",
+  upload.single("image"),
+  async (req, res, next) => {
+    const [name, extention] = req.file.mimetype.split("/");
+    try {
+      await writeFile(
+        path.join(
+          __dirname,
+          `../../../public/img/products/${req.params.productId}.${extention}`
+        ),
+        req.file.buffer
+      );
+      const products = await getProducts();
+      const updatedDb = products.map(product =>
+        product._id === req.params.productId
+          ? {
+              ...product,
+              updatedAt: new Date(),
+              imageUrl: `http://localhost:${process.env.PORT}/products/${req.params.id}.${extention}`,
+            }
+          : product
+      );
+      await writeProducts(updatedDb);
+      // console.log(updatedDb)
+      res.status(201).send("ok");
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
   }
-});
+);
 
 router.get("/export/exportToCSV", async (req, res, next) => {
   try {
@@ -372,67 +380,59 @@ router.get("/export/exportToCSV", async (req, res, next) => {
   }
 });
 
-router.get("/sumTwoPrices/", async (req, res, next) => {
+router.get("/xml/sumTwoPrices/", async (req, res, next) => {
   try {
-    const { prod1, prod2 } = req.query;
+    const products = await getProducts();
 
-    // const products =  await getProducts()      
-    // if (req.query && req.query._id) {
-    //     const filteredProducts = books.filter(
-    //       book =>
-    //         book.hasOwnProperty("price") &&
-    //         product._is === req.query._id
-    //     );
-    //     res.send(filteredProducts);
-    //   } else {
-    //       console.log("Not able to sum up");
-    //   }
-    // const products =  await getProducts()
-    //     const prod1 = products.filter(
-    //         product => product._id === req.query.id1)
-    //      const selectedProduct2 = products.filter(
-    //         product => product._id === req.query.id2)
-    //     selectedProduct1.price, selectedProduct2.price
-    const xmlBody = 
-    
-//     `<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
-//   <soap12:Body>
-//     <Add xmlns="http://tempuri.org/">
-//       <intA>${twoProds[0].price}</intA>
-//       <intB>${twoProds[1].price}</intB>
-//     </Add>
-//   </soap12:Body>
-// </soap12:Envelope>`;
+    const { firstId, secondId } = req.query;
 
-begin()
-      .ele("soap12:Envelope", {
-        "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-      })
-      .ele("soap12:Body")
-      .ele("Add", {
-        xmlns: "http://tempuri.org/",
-      })
-      .ele("intA")
-      .text(parseInt(`${prod1[0].price}`))
-      .up() // because it is a sibling & not a nested item
-      .ele("intB")
-      .text(parseInt(`${prod2[0].price}`))
-      .end()
+    const firstProduct = products.find((product) => product._id === firstId);
+    const secondProduct = products.find((product) => product._id === secondId);
+    const xmlBody =
+            `<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+          <soap12:Body>
+            <Add xmlns="http://tempuri.org/">
+              <intA>${firstProduct.price}</intA>
+              <intB>${secondProduct.price}</intB>
+            </Add>
+          </soap12:Body>
+        </soap12:Envelope>`;
 
-    const response = await axios({ // create a http request {POST on on the url, and you need HEADERS!! & provide the xml body by respecting the documentation and their specs (we did this above) }
-      method: "post",
-      url:
-        "http://www.dneonline.com/calculator.asmx?op=Add",
-      data: xmlBody,
-      headers: { "Content-Type": "application/soap+xml" },
-    });
-    const xml = response.data;
-    const parsedJS = await asyncParser(xml);
-    res.send(
-      parsedJS
-    );
-  } catch (error) {
+        // begin( {"version":"1.0", "encoding":"utf-8"})
+
+        //   .ele("soap12:Envelope", {
+        //     "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance", "xmlns:xsd":"http://www.w3.org/2001/XMLSchema", "xmlns:soap12":"http://www.w3.org/2003/05/soap-envelope",
+        //   })
+        //   .ele("soap12:Body")
+        //   .ele("Add", {
+        //     xmlns: "http://tempuri.org/",
+        //   })
+        //   .ele("intA")
+        //   .text(parseInt(product1))
+        //   .up() // because it is a sibling & not a nested item
+        //   .ele("intB")
+        //   .text(parseInt(product2))
+        //   .end();
+      const response = await axios({
+        // create a http request {POST on on the url, and you need HEADERS!! & provide the xml body by respecting the documentation and their specs (we did this above) }
+        method: "post",
+        url: "http://www.dneonline.com/calculator.asmx?op=Add",
+        data: xmlBody,
+        headers: { "Content-Type": "application/soap+xml" },
+        // headers: { "Content-Type": "text/xml" },
+
+      });
+      const xml = response.data;
+      const parsedJS = await asyncParser(xml);
+      const formatParsedJs =
+      parsedJS["soap:Envelope"]["soap:Body"][0]["AddResponse"][0][
+        "AddResult"
+      ][0];
+    res.status(200).send(formatParsedJs);
+    }
+  catch (error) {
     next(error);
+    console.log(error);
   }
 });
 
