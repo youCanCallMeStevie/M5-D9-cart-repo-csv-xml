@@ -1,0 +1,53 @@
+[
+  {
+    "_id": "5d318e1a8541744830bef139",
+    "name": "app test 1",
+    "description": "somthing longer",
+    "brand": "nokia",
+    "price": 100,
+    "category": "smartphones",
+    "createdAt": "2019-07-19T09:32:10.535Z",
+    "updatedAt": "2020-12-14T15:14:40.716Z",
+    "imageUrl": "http://localhost:3001/products/5d318e1a8541744830bef139.jpeg"
+  },
+  {
+    "name": "dddfff",
+    "description": "rr",
+    "brand": "ee",
+    "price": "33",
+    "dateTime": "2020-12-10T17:05",
+    "category": "",
+    "_id": "31dhur5d4hkikckm1q",
+    "createdAt": "2020-12-11T14:10:04.573Z"
+  },
+  {
+    "name": "Cracking Pork & Apple Sausages",
+    "description": "image",
+    "brand": "Lily's Kitchen",
+    "price": "12",
+    "dateTime": "2020-12-16T15:38",
+    "category": "",
+    "_id": "c9lkxs7dkikfq80d",
+    "createdAt": "2020-12-11T15:38:25.164Z"
+  },
+  {
+    "name": "The Dead Don't Die",
+    "description": "image",
+    "brand": "Furbo",
+    "price": "12",
+    "dateTime": "2020-12-22T15:39",
+    "category": "",
+    "_id": "c9lkxs8ukikfrq0i",
+    "createdAt": "2020-12-11T15:39:35.153Z"
+  },
+  {
+    "name": "debrief",
+    "description": "howd it go?",
+    "brand": "strive",
+    "price": "100000",
+    "dateTime": "2020-12-11T16:10",
+    "category": "",
+    "_id": "c9lkxsnmkikgv4qo",
+    "createdAt": "2020-12-11T16:10:13.823Z"
+  }
+]
